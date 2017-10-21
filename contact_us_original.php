@@ -24,31 +24,42 @@ if(isset($_POST['btnSubmit'])){
 	$c_phone = mysql_real_escape_string($_POST['c_phone']);
 	$c_message = mysql_real_escape_string($_POST['c_message']);
 	
-
-	//Admin send Mail
-	
-	$content = "Dear Administrator, <br><br>";
-	$content .="Name:".$c_name."<br>";
-	$content .="Email:".$c_email."<br>";
-	$content .="Phone No.:".$c_phone."<br>";
-	$content .="Message:".$c_message."<br><br>";
-	$content .= "Thanks <br>" .$c_name. "<br><br>";
-	$to = $ADMINEMAIL;
-	$from = $ADMINEMAIL;
-	
-	SendHTMLMail($to,"Contact Us",$content,$c_email);
-	
-	//user send Mail
-	
-		$content_user = "Hello," .$c_name. "<br><br>";
-		$content_user .="Your Contact Details submitted successfully.<br><br>";
-		$content_user .= "Thanks <br>";
-		$content_user .= "Real Business Broker Team <br>";
-		if(SendHTMLMail($c_email,"Contact Us",$content_user,$from))
-			$msg = "Your contact enquiry has been submitted successfully.";
-		else
-			$msg = "Can not sent. Please Try again!";
+	session_start();
+	if(empty($_SESSION['captcha_code'] ) || strcasecmp($_SESSION['captcha_code'] , $_POST['captcha_code']) != 0)
+	{  
+		//$msgc="<span style='color:red; padding-left:188px;'>The Validation code does not match!</span>";// Captcha verification is incorrect.
+		$msgc="<script>
+			alert('captch does not match!');
+		</script>";
 		
+	}
+	else
+	{
+			//Admin send Mail
+			
+			$content = "Dear Administrator, <br><br>";
+			$content .="Name:".$c_name."<br>";
+			$content .="Email:".$c_email."<br>";
+			$content .="Phone No.:".$c_phone."<br>";
+			$content .="Message:".$c_message."<br><br>";
+			$content .= "Thanks <br>" .$c_name. "<br><br>";
+			$to = $ADMINEMAIL;
+			$from = $ADMINEMAIL;
+			
+			SendHTMLMail($to,"Contact Us",$content,$c_email);
+			
+			//user send Mail
+			
+				$content_user = "Hello," .$c_name. "<br><br>";
+				$content_user .="Your Contact Details submitted successfully.<br><br>";
+				$content_user .= "Thanks <br>";
+				$content_user .= "Real Business Broker Team <br>";
+				if(SendHTMLMail($c_email,"Contact Us",$content_user,$from))
+					$msg = "Your contact enquiry has been submitted successfully.";
+				else
+					$msg = "Can not sent. Please Try again!";
+			
+	}
 }
 ?>
 <!DOCTYPE>
@@ -63,8 +74,6 @@ if(isset($_POST['btnSubmit'])){
 <script src="assert/js/jquery.min.js"></script>
 <script src="assert/js/bootstrap.min.js"></script>
 <script src="http://maps.googleapis.com/maps/api/js"></script>
-<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
-<script src='https://www.google.com/recaptcha/api.js'></script>
 <script>
 	
 jQuery(document).ready(function(){
@@ -111,23 +120,16 @@ jQuery(document).ready(function(){
 
 });
 
-function varify_captcha(){	
-	var verify_flag = false;
-	
-	jQuery.ajax({
-		url : 'verify_recptcha.php',
-		method : 'POST',
-		data : "g-recaptcha-response="+jQuery("#g-recaptcha-response").val(),
-		async : false,
-		success : function(data){
-			if(data == 1){
-				verify_flag = true;
-			}
+
+	/*jQuery('.numers_only').on('blur',function(){
+		var val = jQuery(this).val();
+		if(val!='' && val != null){
+			val = parseFloat(val).toFixed(2);
+		}else{
+			val = '';
 		}
-		
-	});
-	return verify_flag;
-}
+		jQuery(this).val(val);
+	});*/
 	
 function refreshCaptcha(){
 	var img = document.images['captchaimg'];
@@ -160,11 +162,8 @@ function validate(){
 			jQuery('#c_message').css({'border-color':'red'});
 			return false;
 		}
-		else if(jQuery("#g-recaptcha-response").val() == ''){
-			alert("Please click on the reCAPTCHA box.");
-			return false;
-		}else if(!varify_captcha()){
-			alert('Robot verification failed, please try again.');
+		else if(jQuery('#captcha_code').val()==""){
+			jQuery('#captcha_code').css({'border-color':'red'});
 			return false;
 		}
 		else{
@@ -227,8 +226,12 @@ function validate(){
 								?>
                             <li>
                             	<label>&nbsp;</label>
-                                <div class="g-recaptcha" data-sitekey="6Lcy9BEUAAAAAFj4olv4lie9knmkBMNcBIDo4ErF"  style="float:left;" ></div>
+                                <img src="captcha.php?rand=<?php echo rand();?>" id='captchaimg'><a href='javascript: refreshCaptcha();'><image src="images/refresh.png" style="padding-left:10px; height: 32px; width: 32px"/></a>
 									
+                            </li>
+                            <li>
+                            	<label>&nbsp;</label>
+                                <span><input id="captcha_code" name="captcha_code" type="text" class="input-ctn-field"></span>
                             </li>	
                             <li>
                                 <label class="last">&nbsp;</label>
